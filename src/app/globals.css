@@ -3,7 +3,12 @@
 @tailwind utilities;
 
 /* Polices personnalisées */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,700;1,400;1,500&display=swap');
+
+/* Classes de police personnalisées */
+.playfair {
+  font-family: 'Playfair Display', serif;
+}
 
 /* Variables globales */
 :root {
@@ -14,8 +19,8 @@
 
 /* Style global du corps */
 body {
-  background-color: black;
-  color: white;
+  background-color: var(--color-primary);
+  color: var(--color-black);
   font-family: 'Inter', sans-serif;
 }
 
@@ -26,6 +31,48 @@ h4,
 h5,
 h6 {
   font-family: 'Playfair Display', serif;
+}
+
+/* Animation de transition entre les pages - pour la transition entre jaune et noir */
+.page-transition-enter {
+  opacity: 0;
+}
+
+.page-transition-enter-active {
+  opacity: 1;
+  transition: opacity 400ms;
+}
+
+.page-transition-exit {
+  opacity: 1;
+}
+
+.page-transition-exit-active {
+  opacity: 0;
+  transition: opacity 400ms;
+}
+
+/* Animation de transition fonds jaune vers noir */
+.bg-transition {
+  position: relative;
+  overflow: hidden;
+}
+
+.bg-transition::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(to bottom, var(--color-primary) 0%, var(--color-black) 100%);
+  z-index: -1;
+  opacity: 0;
+  transition: opacity 0.8s ease;
+}
+
+.bg-transition.scrolled::after {
+  opacity: 1;
 }
 
 /* Animations globales */
@@ -54,7 +101,7 @@ h6 {
   width: 24px;
   height: 24px;
   border-radius: 50%;
-  background-color: rgba(205, 254, 0, 0.5);
+  background-color: rgba(0, 0, 0, 0.5);
   mix-blend-mode: difference;
   transform: translate(-50%, -50%);
   z-index: 9999;
@@ -85,17 +132,27 @@ h6 {
   background-color: rgba(205, 254, 0, 0.9);
 }
 
-.btn-outline {
-  background-color: transparent;
-  border-width: 2px;
-  border-color: white;
+.btn-dark {
+  background-color: var(--color-black);
   color: white;
 }
 
-.btn-outline:hover {
-  background-color: rgba(255, 255, 255, 0.1);
+.btn-dark:hover {
+  background-color: rgba(0, 0, 0, 0.9);
 }
 
+.btn-outline {
+  background-color: transparent;
+  border-width: 2px;
+  border-color: black;
+  color: black;
+}
+
+.btn-outline:hover {
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+/* Classes de mise en page responsive */
 .section-padding {
   padding-top: 4rem;
   padding-bottom: 4rem;
@@ -118,4 +175,95 @@ h6 {
     padding-left: 3rem;
     padding-right: 3rem;
   }
+}
+
+/* Ajouter ces styles à votre fichier globals.css */
+
+/* Animation de rotation 3D */
+@keyframes rotate {
+  from {
+    transform: rotateX(0deg) rotateY(0deg);
+  }
+
+  to {
+    transform: rotateX(360deg) rotateY(360deg);
+  }
+}
+
+/* Animation de pulsation */
+@keyframes pulse {
+  0% {
+    transform: scale(0.95);
+    opacity: 0.7;
+  }
+
+  50% {
+    transform: scale(1.05);
+    opacity: 0.9;
+  }
+
+  100% {
+    transform: scale(0.95);
+    opacity: 0.7;
+  }
+}
+
+.pulse-animation {
+  animation: pulse 3s ease-in-out infinite;
+}
+
+/* Styles pour la perspective 3D */
+.perspective-container {
+  perspective: 1000px;
+  transform-style: preserve-3d;
+}
+
+.sphere-container {
+  transform-style: preserve-3d;
+  animation: float 6s ease-in-out infinite;
+}
+
+/* Style pour le réseau neuronal canvas */
+canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* Styles pour animations 3D et distorsion */
+.distortion-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+}
+
+/* Styles pour la visualisation 3D */
+.three-container {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  height: 100%;
+  border-radius: 12px;
+}
+
+/* Animation de flottement */
+@keyframes float {
+  0% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-10px);
+  }
+
+  100% {
+    transform: translateY(0px);
+  }
+}
+
+.floating {
+  animation: float 6s ease-in-out infinite;
 }
