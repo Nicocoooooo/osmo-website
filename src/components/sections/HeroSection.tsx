@@ -4,31 +4,35 @@ import gsap from 'gsap';
 import Button from '../ui/Button';
 import * as THREE from 'three';
 
-interface GridPoint {
-    x: number;
-    y: number;
-    originalX: number;
-    originalY: number;
-}
-
-interface GridData {
-    points: GridPoint[];
-    cols: number;
-    rows: number;
-    width: number;
-    height: number;
-}
+/**
+ * HeroSection optimisé avec:
+ * - Suppression complète du canvas de distorsion
+ * - Optimisation de Three.js
+ * - Correction des erreurs de type (physicallyCorrectLights)
+ */
 
 const HeroSection = () => {
     const containerRef = useRef<HTMLDivElement>(null);
     const textRef = useRef<HTMLDivElement>(null);
-    const canvasRef = useRef<HTMLCanvasElement>(null);
     const threeContainerRef = useRef<HTMLDivElement>(null);
-    const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
-    const isInView = useInView(textRef, { once: false, amount: 0.2 });
-    const animationFrameRef = useRef<number | null>(null);
 
-    // Animation des titres et sous-titres
+    // État pour suivre si un composant est visible
+    const [isInView, setIsInView] = useState(false);
+
+    // Référence pour la scène Three.js
+    const threeSceneRef = useRef<{
+        scene?: THREE.Scene;
+        camera?: THREE.PerspectiveCamera;
+        renderer?: THREE.WebGLRenderer;
+        sphere?: THREE.Mesh;
+        particles?: THREE.Points;
+        lines?: THREE.Line[];
+    }>({});
+
+    // Référence pour l'animation frame
+    const threeAnimationFrameRef = useRef<number | null>(null);
+
+    // Animation des titres et sous-titres avec Framer Motion
     const titleVariants = {
         hidden: { opacity: 0, y: 20 },
         visible: {
@@ -54,206 +58,49 @@ const HeroSection = () => {
         })
     };
 
-    // Tracking de la position de la souris avec throttling pour la performance
+    // Observer pour déterminer si l'élément est visible
     useEffect(() => {
-        let lastMoveTime = 0;
-        const throttleTime = 16; // ~60fps
+        if (!textRef.current) return;
 
-        const handleMouseMove = (e: MouseEvent) => {
-            const currentTime = Date.now();
-            if (currentTime - lastMoveTime < throttleTime) return;
+        const observer = new IntersectionObserver(
+            entries => {
+                entries.forEach(entry => {
+                    setIsInView(entry.isIntersecting);
+                });
+            },
+            { threshold: 0.2 }
+        );
 
-            lastMoveTime = currentTime;
-            const { clientX, clientY } = e;
-            const x = clientX / window.innerWidth;
-            const y = clientY / window.innerHeight;
-            setMousePosition({ x, y });
-        };
+        observer.observe(textRef.current);
 
-        window.addEventListener('mousemove', handleMouseMove, { passive: true });
         return () => {
-            window.removeEventListener('mousemove', handleMouseMove);
+            if (textRef.current) {
+                observer.unobserve(textRef.current);
+            }
         };
     }, []);
 
-    // Effet de distorsion plus fluide avec GSAP
+    // Animation du texte au scroll avec GSAP (plus légère)
     useEffect(() => {
-        if (!canvasRef.current) return;
-
-        const canvas = canvasRef.current;
-        // Utiliser l'assertion de type simple
-        const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
-        if (!ctx) return;
-
-        // Optimisations pour la fluidité - avec assertion de type
-        (ctx as any).imageSmoothingEnabled = true;
-        (ctx as any).imageSmoothingQuality = 'high';
-
-        // Configuration pour ajuster la taille du canvas avec offscreen rendering
-        const setCanvasSize = () => {
-            const dpr = window.devicePixelRatio || 1;
-            const rect = canvas.getBoundingClientRect();
-            canvas.width = rect.width * dpr;
-            canvas.height = rect.height * dpr;
-            ctx.scale(dpr, dpr);
-            canvas.style.width = `${rect.width}px`;
-            canvas.style.height = `${rect.height}px`;
-        };
-
-        setCanvasSize();
-        let prevTimestamp = 0;
-
-        // Configuration de la grille
-        const grid = {
-            spacing: Math.min(window.innerWidth, window.innerHeight) / 20,
-            lineWidth: 0.5,
-            amplitude: 15,
-            speed: 0.0003,
-            density: 1
-        };
-
-        // Créer une grille de points précalculée pour optimiser
-        const createGrid = (): GridData => {
-            const width = canvas.width / window.devicePixelRatio;
-            const height = canvas.height / window.devicePixelRatio;
-
-            const cols = Math.ceil(width / grid.spacing) + 2;
-            const rows = Math.ceil(height / grid.spacing) + 2;
-
-            const points: GridPoint[] = [];
-            for (let i = 0; i < cols; i++) {
-                for (let j = 0; j < rows; j++) {
-                    points.push({
-                        x: i * grid.spacing,
-                        y: j * grid.spacing,
-                        originalX: i * grid.spacing,
-                        originalY: j * grid.spacing,
-                    });
-                }
-            }
-
-            return { points, cols, rows, width, height };
-        };
-
-        let gridData = createGrid();
-
-        // Animation ultrafluide avec RAF et deltaTime
-        const animateGrid = (timestamp: number) => {
-            if (!ctx) return;
-
-            // Calculer le delta pour des animations stables
-            const deltaTime = timestamp - prevTimestamp;
-            prevTimestamp = timestamp;
-
-            // Clear avec une légère trace pour un effet plus fluide
-            ctx.clearRect(0, 0, canvas.width / window.devicePixelRatio, canvas.height / window.devicePixelRatio);
-
-            // Mise à jour de tous les points de la grille
-            const { points, cols, rows, width, height } = gridData;
-
-            // Calculer les déformations
-            for (let i = 0; i < points.length; i++) {
-                const point = points[i];
-
-                // Distorsion basée sur le temps et la position de la souris
-                const distanceToMouse = Math.sqrt(
-                    Math.pow((point.originalX / width - mousePosition.x), 2) +
-                    Math.pow((point.originalY / height - mousePosition.y), 2)
-                );
-
-                // Effet atténué avec la distance
-                const influence = Math.max(0, 1 - distanceToMouse * 3);
-
-                // Animation sinusoïdale continue
-                const time = timestamp * grid.speed;
-                const waveX = Math.sin(point.originalY * 0.01 + time) * grid.amplitude;
-                const waveY = Math.cos(point.originalX * 0.01 + time) * grid.amplitude;
-
-                // Combiner l'effet de souris et l'animation de vague
-                point.x = point.originalX + waveX * 0.3 + influence * grid.amplitude * 2 * (0.5 - mousePosition.x);
-                point.y = point.originalY + waveY * 0.3 + influence * grid.amplitude * 2 * (0.5 - mousePosition.y);
-            }
-
-            // Dessiner les lignes horizontales et verticales
-            ctx.strokeStyle = 'rgba(0, 0, 0, 0.07)';
-            ctx.lineWidth = grid.lineWidth;
-
-            // Verticales
-            for (let col = 0; col < cols; col++) {
-                ctx.beginPath();
-                for (let row = 0; row < rows; row++) {
-                    const point = points[row * cols + col];
-                    if (row === 0) {
-                        ctx.moveTo(point.x, point.y);
-                    } else {
-                        ctx.lineTo(point.x, point.y);
-                    }
-                }
-                ctx.stroke();
-            }
-
-            // Horizontales
-            for (let row = 0; row < rows; row++) {
-                ctx.beginPath();
-                for (let col = 0; col < cols; col++) {
-                    const point = points[row * cols + col];
-                    if (col === 0) {
-                        ctx.moveTo(point.x, point.y);
-                    } else {
-                        ctx.lineTo(point.x, point.y);
-                    }
-                }
-                ctx.stroke();
-            }
-
-            animationFrameRef.current = requestAnimationFrame(animateGrid);
-        };
-
-        // Gestionnaire de redimensionnement optimisé
-        const handleResize = () => {
-            setCanvasSize();
-            gridData = createGrid();
-        };
-
-        let resizeTimeout: ReturnType<typeof setTimeout>;
-        const throttledResize = () => {
-            clearTimeout(resizeTimeout);
-            resizeTimeout = setTimeout(handleResize, 100);
-        };
-
-        window.addEventListener('resize', throttledResize);
-
-        // Animation du texte au scroll
         if (textRef.current && containerRef.current) {
             gsap.fromTo(
                 textRef.current,
                 { y: 0 },
                 {
-                    y: -30,
+                    y: -20, // Valeur réduite
                     scrollTrigger: {
                         trigger: containerRef.current,
                         start: 'top top',
                         end: 'bottom top',
-                        scrub: true
+                        scrub: 0.5, // Ajout de lissage
+                        invalidateOnRefresh: true
                     }
                 }
             );
         }
+    }, []);
 
-        // Démarrer l'animation avec une valeur initiale
-        prevTimestamp = performance.now(); // Fournir une valeur initiale
-        animationFrameRef.current = requestAnimationFrame(animateGrid);
-
-        return () => {
-            if (animationFrameRef.current) {
-                cancelAnimationFrame(animationFrameRef.current);
-            }
-            window.removeEventListener('resize', throttledResize);
-            clearTimeout(resizeTimeout);
-        };
-    }, [mousePosition]);
-
-    // Visualisation 3D avec Three.js
+    // Visualisation 3D avec Three.js optimisée
     useEffect(() => {
         if (!threeContainerRef.current) return;
 
@@ -269,21 +116,34 @@ const HeroSection = () => {
 
         // Scene, camera et renderer
         const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(60, width / height, 0.1, 1000);
+        threeSceneRef.current.scene = scene;
+
+        const camera = new THREE.PerspectiveCamera(60, width / height, 0.1, 100);
         camera.position.z = 4.5;
+        threeSceneRef.current.camera = camera;
 
         const renderer = new THREE.WebGLRenderer({
             alpha: true,
-            antialias: true
+            antialias: false, // Désactiver l'antialiasing pour la performance
+            powerPreference: 'high-performance'
         });
+
+        renderer.setPixelRatio(window.devicePixelRatio > 1 ? 1.5 : 1); // Limiter le pixel ratio
         renderer.setSize(width, height);
         renderer.setClearColor(0x000000, 0);
+
+        // Désactiver les ombres
+        renderer.shadowMap.enabled = false;
+
+        // Note: physicallyCorrectLights n'est plus nécessaire, nous l'avons retiré
+
         container.appendChild(renderer.domElement);
+        threeSceneRef.current.renderer = renderer;
 
-        // Géométrie 3D - sphère complexe
-        const geometry = new THREE.IcosahedronGeometry(1.8, 2);
+        // Géométrie 3D - sphère simplifiée
+        const geometry = new THREE.IcosahedronGeometry(1.8, 1); // Réduit la complexité (niveau 1 au lieu de 2)
 
-        // Matériau en maille (wireframe)
+        // Matériau en maille (wireframe) simplifié
         const material = new THREE.MeshBasicMaterial({
             color: 0x000000,
             wireframe: true,
@@ -293,9 +153,10 @@ const HeroSection = () => {
 
         const sphere = new THREE.Mesh(geometry, material);
         scene.add(sphere);
+        threeSceneRef.current.sphere = sphere;
 
-        // Ajouter des points
-        const particlesCount = 150;
+        // Ajouter des points (réduit le nombre)
+        const particlesCount = 60; // Réduit de 150 à 60
         const particlesGeometry = new THREE.BufferGeometry();
         const particlePositions = new Float32Array(particlesCount * 3);
 
@@ -317,13 +178,15 @@ const HeroSection = () => {
             color: 0x000000,
             size: 0.05,
             transparent: true,
-            opacity: 0.7
+            opacity: 0.7,
+            sizeAttenuation: true
         });
 
         const particleSystem = new THREE.Points(particlesGeometry, particlesMaterial);
         scene.add(particleSystem);
+        threeSceneRef.current.particles = particleSystem;
 
-        // Ajouter des connexions entre les points
+        // Ajouter des connexions entre les points (réduites)
         const linesMaterial = new THREE.LineBasicMaterial({
             color: 0x000000,
             transparent: true,
@@ -331,7 +194,7 @@ const HeroSection = () => {
         });
 
         const lines: THREE.Line[] = [];
-        const maxConnections = 30;
+        const maxConnections = 10; // Réduit de 30 à 10
 
         for (let i = 0; i < maxConnections; i++) {
             const idx1 = Math.floor(Math.random() * particlesCount);
@@ -355,36 +218,58 @@ const HeroSection = () => {
             scene.add(line);
         }
 
-        // Animation
+        threeSceneRef.current.lines = lines;
+
+        // Animation avec throttling FPS
         let animationId: number;
         let lastTime = 0;
+        let fpsInterval = 1000 / 30; // Limiter à 30 FPS
 
         const animate = (time: number) => {
-            const delta = time - lastTime;
-            lastTime = time;
+            // Calculer le delta de temps écoulé
+            const now = time;
+            const elapsed = now - lastTime;
 
-            // Rotation lente
-            sphere.rotation.y += 0.0002 * delta;
-            sphere.rotation.x += 0.0001 * delta;
+            // Si le temps écoulé est inférieur à l'intervalle cible, continuer sans mettre à jour
+            if (elapsed < fpsInterval) {
+                threeAnimationFrameRef.current = requestAnimationFrame(animate);
+                return;
+            }
+
+            // Mettre à jour le dernier temps d'exécution
+            lastTime = now - (elapsed % fpsInterval);
+
+            if (!sphere || !particleSystem) return;
+
+            // Rotation lente (réduite)
+            sphere.rotation.y += 0.0001 * elapsed;
+            sphere.rotation.x += 0.00005 * elapsed;
             particleSystem.rotation.y = sphere.rotation.y;
             particleSystem.rotation.x = sphere.rotation.x;
 
-            // Effet de respiration
-            const breatheFactor = Math.sin(time * 0.0005) * 0.03 + 1;
+            // Effet de respiration (réduit)
+            const breatheFactor = Math.sin(time * 0.0003) * 0.02 + 1;
             sphere.scale.set(breatheFactor, breatheFactor, breatheFactor);
 
             // Mettre à jour les lignes
-            lines.forEach(line => {
-                line.rotation.y = sphere.rotation.y;
-                line.rotation.x = sphere.rotation.x;
-            });
+            if (lines) {
+                lines.forEach(line => {
+                    line.rotation.y = sphere.rotation.y;
+                    line.rotation.x = sphere.rotation.x;
+                });
+            }
 
-            renderer.render(scene, camera);
-            animationId = requestAnimationFrame(animate);
+            if (renderer && scene && camera) {
+                renderer.render(scene, camera);
+            }
+
+            threeAnimationFrameRef.current = requestAnimationFrame(animate);
         };
 
-        // Responsive
-        const handleResize = () => {
+        // Responsive avec throttling
+        const handleThreeResize = () => {
+            if (!camera || !renderer) return;
+
             const newWidth = container.clientWidth;
             const newHeight = container.clientHeight;
 
@@ -393,34 +278,44 @@ const HeroSection = () => {
             renderer.setSize(newWidth, newHeight);
         };
 
-        window.addEventListener('resize', handleResize);
+        let resizeThreeTimeout: ReturnType<typeof setTimeout>;
+        const throttledThreeResize = () => {
+            clearTimeout(resizeThreeTimeout);
+            resizeThreeTimeout = setTimeout(handleThreeResize, 200);
+        };
+
+        window.addEventListener('resize', throttledThreeResize);
 
         // Lancer l'animation avec valeur initiale
-        lastTime = performance.now(); // Fournir une valeur initiale
-        animationId = requestAnimationFrame(animate);
+        lastTime = performance.now();
+        threeAnimationFrameRef.current = requestAnimationFrame(animate);
 
         return () => {
-            if (animationId) {
-                cancelAnimationFrame(animationId);
+            // Nettoyer les animations et les événements
+            if (threeAnimationFrameRef.current) {
+                cancelAnimationFrame(threeAnimationFrameRef.current);
             }
-            window.removeEventListener('resize', handleResize);
 
-            // Libérer les ressources - Correction de dispose
-            geometry.dispose();
-            if (material instanceof THREE.Material) {
-                material.dispose();
+            window.removeEventListener('resize', throttledThreeResize);
+            clearTimeout(resizeThreeTimeout);
+
+            // Libérer les ressources Three.js
+            if (geometry) geometry.dispose();
+            if (material instanceof THREE.Material) material.dispose();
+            if (particlesGeometry) particlesGeometry.dispose();
+            if (particlesMaterial instanceof THREE.Material) particlesMaterial.dispose();
+
+            if (lines) {
+                lines.forEach(line => {
+                    if (line.geometry) line.geometry.dispose();
+                    if (line.material instanceof THREE.Material) line.material.dispose();
+                });
             }
-            particlesGeometry.dispose();
-            particlesMaterial.dispose();
 
-            lines.forEach(line => {
-                line.geometry.dispose();
-                if (line.material instanceof THREE.Material) {
-                    line.material.dispose();
-                }
-            });
+            if (renderer) renderer.dispose();
 
-            renderer.dispose();
+            // Vider les références
+            threeSceneRef.current = {};
         };
     }, []);
 
@@ -429,11 +324,6 @@ const HeroSection = () => {
             ref={containerRef}
             className="relative min-h-screen flex items-center overflow-hidden bg-primary"
         >
-            {/* Animation de distorsion en arrière-plan */}
-            <div className="absolute inset-0 z-0">
-                <canvas ref={canvasRef} className="w-full h-full"></canvas>
-            </div>
-
             {/* Contenu principal */}
             <div className="container mx-auto px-6 md:px-12 relative z-20 py-12">
                 <div className="grid grid-cols-1 lg:grid-cols-5 gap-12 items-center">

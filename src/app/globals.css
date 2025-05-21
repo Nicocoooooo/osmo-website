@@ -1,3 +1,4 @@
+/* Import de Tailwind CSS */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -177,8 +178,6 @@ h6 {
   }
 }
 
-/* Ajouter ces styles à votre fichier globals.css */
-
 /* Animation de rotation 3D */
 @keyframes rotate {
   from {
@@ -228,16 +227,6 @@ canvas {
   display: block;
   width: 100%;
   height: 100%;
-}
-
-/* Styles pour animations 3D et distorsion */
-.distortion-canvas {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  z-index: 0;
 }
 
 /* Styles pour la visualisation 3D */

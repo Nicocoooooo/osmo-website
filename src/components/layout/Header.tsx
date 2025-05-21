@@ -1,61 +1,72 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 
+/**
+ * Header optimisé avec:
+ * - Réduction des animations inutiles
+ * - Utilisation de useCallback pour les fonctions
+ * - Optimisation des variantes d'animation
+ * - Throttling du scroll event
+ */
 const Header = () => {
     const [isScrolled, setIsScrolled] = useState(false);
     const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-    useEffect(() => {
-        const handleScroll = () => {
+    // Optimisation: utiliser useCallback pour éviter les re-créations de fonction
+    const handleScroll = useCallback(() => {
+        // Mise en œuvre d'un throttling simple du scroll
+        window.requestAnimationFrame(() => {
             const offset = window.scrollY;
-            if (offset > 50) {
-                setIsScrolled(true);
-            } else {
-                setIsScrolled(false);
-            }
-        };
+            setIsScrolled(offset > 50);
+        });
+    }, []);
 
-        window.addEventListener('scroll', handleScroll);
+    useEffect(() => {
+        // Utilisation de passive: true pour améliorer la performance du scroll
+        window.addEventListener('scroll', handleScroll, { passive: true });
+
         return () => {
             window.removeEventListener('scroll', handleScroll);
         };
-    }, []);
+    }, [handleScroll]);
 
+    // Animations optimisées: transitions plus légères
     const headerVariants = {
         initial: {
-            backgroundColor: 'transparent',
+            backgroundColor: 'rgba(205, 254, 0, 1)',
             height: '100px',
         },
         scrolled: {
-            backgroundColor: '#CDFE00',
+            backgroundColor: 'rgba(205, 254, 0, 0.95)',
             height: '80px',
-            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)'
+            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.05)'
         }
     };
 
+    // Optimisation: utiliser GPU pour les animations avec translateY plutôt que y
     const logoVariants = {
-        initial: { opacity: 0, x: -20 },
+        initial: { opacity: 0, translateX: -20 },
         animate: {
             opacity: 1,
-            x: 0,
+            translateX: 0,
             transition: { duration: 0.5 }
         },
         hover: {
             scale: 1.05,
-            transition: { duration: 0.2 }
+            transition: { duration: 0.2, ease: 'easeOut' }
         }
     };
 
     const linkVariants = {
-        initial: { opacity: 0, y: -10 },
+        initial: { opacity: 0, translateY: -10 },
         animate: (i: number) => ({
             opacity: 1,
-            y: 0,
+            translateY: 0,
             transition: {
-                duration: 0.5,
-                delay: 0.1 * i
+                duration: 0.3,
+                delay: 0.05 * i
             }
         }),
         hover: {
@@ -65,11 +76,36 @@ const Header = () => {
         }
     };
 
+    // Variante mobile optimisée
+    const mobileMenuVariants = {
+        closed: {
+            opacity: 0,
+            translateX: '100%',
+            transition: {
+                duration: 0.3,
+                ease: [0.16, 1, 0.3, 1]
+            }
+        },
+        open: {
+            opacity: 1,
+            translateX: 0,
+            transition: {
+                duration: 0.4,
+                ease: [0.16, 1, 0.3, 1]
+            }
+        }
+    };
+
     const navLinks = [
         { name: 'Nos solutions', href: '/solutions' },
         { name: 'L\'équipe Osmo', href: '/equipe' },
         { name: 'Contact', href: '/contact' }
     ];
+
+    // Optimisation: fonction pour fermer le menu
+    const closeMenu = useCallback(() => {
+        setIsMenuOpen(false);
+    }, []);
 
     return (
         <motion.header
@@ -95,6 +131,7 @@ const Header = () => {
                             width={48}
                             height={48}
                             className="object-contain"
+                            priority // Priorité de chargement pour le logo
                         />
                     </motion.div>
                 </Link>
@@ -122,11 +159,11 @@ const Header = () => {
                 {/* Espace réservé pour équilibrer le header */}
                 <div className="w-10 md:w-12"></div>
 
-                {/* Menu burger pour mobile */}
+                {/* Menu burger pour mobile - optimisé avec des transitions simples */}
                 <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    transition={{ delay: 0.5 }}
+                    transition={{ delay: 0.3 }}
                     className="block md:hidden cursor-pointer z-10 absolute right-6"
                     onClick={() => setIsMenuOpen(!isMenuOpen)}
                 >
@@ -136,35 +173,41 @@ const Header = () => {
                 </motion.div>
             </div>
 
-            {/* Menu mobile */}
-            {isMenuOpen && (
-                <motion.div
-                    initial={{ opacity: 0, x: '100%' }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: '100%' }}
-                    transition={{ duration: 0.3 }}
-                    className="fixed inset-0 bg-primary z-40 flex flex-col items-center justify-center"
-                >
-                    <ul className="flex flex-col space-y-6 items-center">
-                        {navLinks.map((link, i) => (
-                            <motion.li
-                                key={link.name}
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: 0.1 * i }}
-                            >
-                                <Link
-                                    href={link.href}
-                                    className="text-black font-medium text-2xl"
-                                    onClick={() => setIsMenuOpen(false)}
+            {/* Menu mobile avec AnimatePresence pour optimiser le DOM */}
+            <AnimatePresence>
+                {isMenuOpen && (
+                    <motion.div
+                        key="mobile-menu"
+                        variants={mobileMenuVariants}
+                        initial="closed"
+                        animate="open"
+                        exit="closed"
+                        className="fixed inset-0 bg-primary z-40 flex flex-col items-center justify-center"
+                    >
+                        <ul className="flex flex-col space-y-6 items-center">
+                            {navLinks.map((link, i) => (
+                                <motion.li
+                                    key={link.name}
+                                    initial={{ opacity: 0, translateY: 20 }}
+                                    animate={{
+                                        opacity: 1,
+                                        translateY: 0,
+                                        transition: { delay: 0.05 * i, duration: 0.3 }
+                                    }}
                                 >
-                                    {link.name}
-                                </Link>
-                            </motion.li>
-                        ))}
-                    </ul>
-                </motion.div>
-            )}
+                                    <Link
+                                        href={link.href}
+                                        className="text-black font-medium text-2xl"
+                                        onClick={closeMenu}
+                                    >
+                                        {link.name}
+                                    </Link>
+                                </motion.li>
+                            ))}
+                        </ul>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </motion.header>
     );
 };

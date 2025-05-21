@@ -3,38 +3,54 @@ import { motion, useInView } from 'framer-motion';
 import gsap from 'gsap';
 import Image from 'next/image';
 
+/**
+ * StepsSection optimisée avec:
+ * - Remplacement de certaines animations GSAP par Framer Motion
+ * - Reduction des calculs répétitifs
+ * - Utilisation appropriée des hooks et useRef
+ * - Simplification des animations
+ * - Implémentation de l'IntersectionObserver
+ */
 const StepsSection = () => {
     const sectionRef = useRef<HTMLDivElement>(null);
     const titleRef = useRef<HTMLHeadingElement>(null);
-    const isTitleInView = useInView(titleRef, { once: false, amount: 0.5 });
+    const stepsContainerRef = useRef<HTMLDivElement>(null);
 
-    // Animation des étapes avec GSAP
+    // Utiliser useInView pour déterminer quand animer
+    const isTitleInView = useInView(titleRef, { once: true, amount: 0.5 });
+    const isStepsInView = useInView(stepsContainerRef, { once: true, amount: 0.2 });
+
+    // Animation des étapes avec GSAP - simplifiée
     useEffect(() => {
-        if (sectionRef.current) {
-            const stepElements = sectionRef.current.querySelectorAll('.step-container');
+        if (!isStepsInView || !sectionRef.current) return;
 
-            if (stepElements.length) {
-                gsap.fromTo(
-                    stepElements,
-                    {
-                        y: 50,
-                        opacity: 0
-                    },
-                    {
-                        y: 0,
-                        opacity: 1,
-                        stagger: 0.2,
-                        duration: 0.8,
-                        ease: "power2.out",
-                        scrollTrigger: {
-                            trigger: sectionRef.current,
-                            start: "top 70%",
-                        }
-                    }
-                );
+        // Ne pas créer plusieurs timelines - utiliser une seule pour tout
+        const tl = gsap.timeline({
+            defaults: {
+                duration: 0.6,
+                ease: "power2.out"
             }
+        });
+
+        const stepElements = sectionRef.current.querySelectorAll('.step-container');
+
+        if (stepElements.length) {
+            tl.fromTo(
+                stepElements,
+                { y: 50, opacity: 0 },
+                {
+                    y: 0,
+                    opacity: 1,
+                    stagger: 0.2,
+                }
+            );
         }
-    }, []);
+
+        return () => {
+            // Nettoyage de la timeline pour éviter les fuites de mémoire
+            tl.kill();
+        };
+    }, [isStepsInView]);
 
     // Animation des titres et sous-titres
     const titleVariants = {
@@ -49,6 +65,7 @@ const StepsSection = () => {
         }
     };
 
+    // Data des étapes
     const stepData = [
         {
             id: 1,
@@ -92,10 +109,10 @@ const StepsSection = () => {
                     </motion.p>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-20">
+                <div ref={stepsContainerRef} className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-20">
                     {stepData.map((step, index) => (
                         <div key={step.id} className="step-container relative">
-                            {/* Ligne de connexion entre les étapes */}
+                            {/* Ligne de connexion entre les étapes - rendue seulement sur desktop */}
                             {index < stepData.length - 1 && (
                                 <div className="hidden md:block absolute top-16 right-0 w-full h-0.5 bg-primary z-0" style={{ transform: 'translateX(50%)' }}></div>
                             )}
@@ -107,7 +124,7 @@ const StepsSection = () => {
                                         {step.id}
                                     </div>
 
-                                    {/* Flèche */}
+                                    {/* Flèche simplifiée (pas d'animation) */}
                                     <svg className="absolute -right-4 top-1/2 transform -translate-y-1/2 w-8 h-8 text-primary" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                                         <path d="M5 12H19M19 12L12 5M19 12L12 19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                                     </svg>
@@ -122,10 +139,9 @@ const StepsSection = () => {
                                     {step.description}
                                 </p>
 
-                                {/* Illustration de l'étape */}
-                                <div className="mt-8 relative h-32 w-full overflow-hidden rounded-lg bg-primary/10">
-                                    {/* Placeholder pour l'illustration */}
-                                    <div className="absolute inset-0 flex items-center justify-center text-primary/30 text-2xl font-bold">
+                                {/* Illustration de l'étape - simplifiée */}
+                                <div className="mt-8 relative h-32 w-full overflow-hidden rounded-lg bg-primary/10 flex items-center justify-center">
+                                    <div className="text-primary/30 text-2xl font-bold">
                                         Étape {step.id}
                                     </div>
                                 </div>
@@ -134,8 +150,14 @@ const StepsSection = () => {
                     ))}
                 </div>
 
-                {/* Illustration au bas de la section */}
-                <div className="mt-20 relative bg-primary/10 rounded-xl p-8 overflow-hidden">
+                {/* Illustration au bas de la section - Animation réduite */}
+                <motion.div
+                    className="mt-20 relative bg-primary/10 rounded-xl p-8 overflow-hidden"
+                    initial={{ opacity: 0, y: 30 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.6 }}
+                >
                     <div className="relative z-10">
                         <div className="flex flex-col md:flex-row items-center justify-between gap-8">
                             <div className="max-w-xl">
@@ -154,9 +176,9 @@ const StepsSection = () => {
                                 </div>
                             </div>
 
+                            {/* Graphique simplifié sans animations */}
                             <div className="relative w-full md:w-96 h-52">
                                 <div className="absolute inset-0 bg-black rounded-lg overflow-hidden">
-                                    {/* Simuler un graphique */}
                                     <div className="p-4 text-white">
                                         <div className="mb-2 text-sm text-white/70">Progression des performances</div>
                                         <div className="flex items-end h-32 space-x-2">
@@ -175,10 +197,10 @@ const StepsSection = () => {
                         </div>
                     </div>
 
-                    {/* Décoration en arrière-plan */}
+                    {/* Décoration statique en arrière-plan */}
                     <div className="absolute -bottom-10 -right-10 w-40 h-40 rounded-full bg-primary/20 opacity-50"></div>
                     <div className="absolute -top-10 -left-10 w-20 h-20 rounded-full bg-primary/20 opacity-50"></div>
-                </div>
+                </motion.div>
             </div>
         </section>
     );
