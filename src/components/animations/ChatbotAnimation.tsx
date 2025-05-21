@@ -295,7 +295,6 @@ const ChatbotAnimation = ({
                                     }`}
                             >
                                 {formatMessageText(currentTypingMessage.displayedText, currentTypingMessage.id)}
-                                <span className="inline-block w-2 h-4 ml-1 bg-current animate-pulse"></span>
                             </div>
                         </motion.div>
                     )}
