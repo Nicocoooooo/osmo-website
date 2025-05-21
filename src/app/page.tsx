@@ -10,6 +10,7 @@ import ContactSection from "../components/sections/ContactSection";
 import useLocoScroll from "../hooks/useLocoScroll";
 import LoadingScreen from "../components/LoadingScreen";
 import ModernLoadingScreen from "../components/ModernLoadingScreen";
+import EnhancedLoadingScreen from "../components/EnhancedLoadingScreen";
 
 export default function Home() {
   const [isLoading, setIsLoading] = useState(true);
@@ -26,7 +27,7 @@ export default function Home() {
 
   return (
     <>
-      <ModernLoadingScreen
+      <EnhancedLoadingScreen
         isLoading={isLoading}
         onComplete={() => console.log("Chargement terminé")}
       />
