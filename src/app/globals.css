@@ -6,11 +6,6 @@
 /* Polices personnalisées */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,700;1,400;1,500&display=swap');
 
-/* Classes de police personnalisées */
-.playfair {
-  font-family: 'Playfair Display', serif;
-}
-
 /* Variables globales */
 :root {
   --color-primary: #CDFE00;
@@ -18,7 +13,7 @@
   --color-white: #FFFFFF;
 }
 
-/* Style global du corps */
+/* ===== STYLES DE BASE ===== */
 body {
   background-color: var(--color-primary);
   color: var(--color-black);
@@ -34,7 +29,11 @@ h6 {
   font-family: 'Playfair Display', serif;
 }
 
-/* Animation de transition entre les pages - pour la transition entre jaune et noir */
+.playfair {
+  font-family: 'Playfair Display', serif;
+}
+
+/* ===== TRANSITIONS DE PAGE ===== */
 .page-transition-enter {
   opacity: 0;
 }
@@ -53,6 +52,7 @@ h6 {
   transition: opacity 400ms;
 }
 
+/* ===== ANIMATIONS ===== */
 /* Animation de transition fonds jaune vers noir */
 .bg-transition {
   position: relative;
@@ -76,18 +76,14 @@ h6 {
   opacity: 1;
 }
 
-/* Animations globales */
-.animate-float {
-  animation: float 6s ease-in-out infinite;
-}
-
+/* Animation de flottement */
 @keyframes float {
   0% {
     transform: translateY(0px);
   }
 
   50% {
-    transform: translateY(-20px);
+    transform: translateY(-10px);
   }
 
   100% {
@@ -95,7 +91,175 @@ h6 {
   }
 }
 
-/* Styles pour le curseur personnalisé */
+.animate-float,
+.floating {
+  animation: float 6s ease-in-out infinite;
+}
+
+/* Animation de pulsation */
+@keyframes pulse {
+  0% {
+    transform: scale(0.95);
+    opacity: 0.7;
+  }
+
+  50% {
+    transform: scale(1.05);
+    opacity: 0.9;
+  }
+
+  100% {
+    transform: scale(0.95);
+    opacity: 0.7;
+  }
+}
+
+.pulse-animation {
+  animation: pulse 3s ease-in-out infinite;
+}
+
+/* Animation de pulsation lente */
+@keyframes pulse-slow {
+  0% {
+    transform: scale(1);
+    opacity: 0.7;
+  }
+
+  100% {
+    transform: scale(1.05);
+    opacity: 0.9;
+  }
+}
+
+/* ===== EFFET DE DEMI-CERCLE LUMINEUX ===== */
+.osmo-glow-circle {
+  position: absolute;
+  width: 200%;
+  height: 100%;
+  left: 50%;
+  bottom: -40%;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.osmo-glow-circle::before {
+  content: '';
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(ellipse at center,
+      rgba(205, 254, 0, 0.8) 0%,
+      rgba(205, 254, 0, 0.4) 30%,
+      rgba(205, 254, 0, 0.2) 50%,
+      rgba(205, 254, 0, 0.05) 70%,
+      rgba(0, 0, 0, 0) 80%);
+  filter: blur(40px);
+  opacity: 0.7;
+  border-radius: 50%;
+  transform-origin: center center;
+  animation: pulse-slow 8s ease-in-out infinite alternate;
+}
+
+.osmo-glow-circle::after {
+  content: '';
+  position: absolute;
+  width: 80%;
+  height: 80%;
+  left: 10%;
+  top: 10%;
+  background: radial-gradient(ellipse at center,
+      rgba(205, 254, 0, 0.6) 0%,
+      rgba(205, 254, 0, 0.3) 40%,
+      rgba(205, 254, 0, 0.1) 60%,
+      rgba(0, 0, 0, 0) 70%);
+  filter: blur(30px);
+  opacity: 0.8;
+  border-radius: 50%;
+  transform-origin: center center;
+  animation: pulse-slow 6s ease-in-out infinite alternate-reverse;
+}
+
+/* ===== STYLES DU TERMINAL ===== */
+.osmo-terminal {
+  position: relative;
+  box-shadow: 0 0 20px rgba(205, 254, 0, 0.15),
+    0 0 40px rgba(0, 0, 0, 0.3);
+  transform-origin: center;
+  background-color: rgba(0, 0, 0, 0.95);
+  border-radius: 10px;
+}
+
+.terminal-body {
+  position: relative;
+  overscroll-behavior: none;
+  color: white;
+}
+
+.terminal-lines {
+  position: relative;
+}
+
+/* Effets de texte */
+.text-primary {
+  text-shadow: 0 0 8px rgba(205, 254, 0, 0.4);
+}
+
+/* Scrollbar pour terminal */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(205, 254, 0, 0.3);
+  border-radius: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(205, 254, 0, 0.5);
+}
+
+.terminal-glow {
+  position: absolute;
+  inset: 0;
+  border-radius: 8px;
+  border: 1px solid rgba(205, 254, 0, 0.2);
+  pointer-events: none;
+}
+
+/* ===== STYLES 3D ===== */
+/* Styles pour la perspective 3D */
+.perspective-container {
+  perspective: 1000px;
+  transform-style: preserve-3d;
+}
+
+.sphere-container {
+  transform-style: preserve-3d;
+  animation: float 6s ease-in-out infinite;
+}
+
+/* Style pour le canvas */
+canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* Styles pour la visualisation 3D */
+.three-container {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  height: 100%;
+  border-radius: 12px;
+}
+
+/* ===== CURSEUR PERSONNALISÉ ===== */
 #custom-cursor {
   pointer-events: none;
   position: fixed;
@@ -109,7 +273,7 @@ h6 {
   transition: transform 0.1s ease-out, width 0.2s ease, height 0.2s ease;
 }
 
-/* Classes utilitaires personnalisées */
+/* ===== CLASSES UTILITAIRES ===== */
 .btn {
   display: inline-flex;
   align-items: center;
@@ -153,7 +317,20 @@ h6 {
   background-color: rgba(0, 0, 0, 0.1);
 }
 
-/* Classes de mise en page responsive */
+/* Améliorations pour bouton sur fond noir */
+.btn-outline.border-primary {
+  border-color: var(--color-primary);
+}
+
+.btn-outline.text-primary {
+  color: var(--color-primary);
+}
+
+.btn-outline.hover\:bg-primary\/10:hover {
+  background-color: rgba(205, 254, 0, 0.1);
+}
+
+/* ===== STYLES RESPONSIVE ===== */
 .section-padding {
   padding-top: 4rem;
   padding-bottom: 4rem;
@@ -176,83 +353,4 @@ h6 {
     padding-left: 3rem;
     padding-right: 3rem;
   }
-}
-
-/* Animation de rotation 3D */
-@keyframes rotate {
-  from {
-    transform: rotateX(0deg) rotateY(0deg);
-  }
-
-  to {
-    transform: rotateX(360deg) rotateY(360deg);
-  }
-}
-
-/* Animation de pulsation */
-@keyframes pulse {
-  0% {
-    transform: scale(0.95);
-    opacity: 0.7;
-  }
-
-  50% {
-    transform: scale(1.05);
-    opacity: 0.9;
-  }
-
-  100% {
-    transform: scale(0.95);
-    opacity: 0.7;
-  }
-}
-
-.pulse-animation {
-  animation: pulse 3s ease-in-out infinite;
-}
-
-/* Styles pour la perspective 3D */
-.perspective-container {
-  perspective: 1000px;
-  transform-style: preserve-3d;
-}
-
-.sphere-container {
-  transform-style: preserve-3d;
-  animation: float 6s ease-in-out infinite;
-}
-
-/* Style pour le réseau neuronal canvas */
-canvas {
-  display: block;
-  width: 100%;
-  height: 100%;
-}
-
-/* Styles pour la visualisation 3D */
-.three-container {
-  position: relative;
-  overflow: hidden;
-  width: 100%;
-  height: 100%;
-  border-radius: 12px;
-}
-
-/* Animation de flottement */
-@keyframes float {
-  0% {
-    transform: translateY(0px);
-  }
-
-  50% {
-    transform: translateY(-10px);
-  }
-
-  100% {
-    transform: translateY(0px);
-  }
-}
-
-.floating {
-  animation: float 6s ease-in-out infinite;
 }

@@ -5,10 +5,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 /**
  * Header optimisé avec:
- * - Réduction des animations inutiles
- * - Utilisation de useCallback pour les fonctions
- * - Optimisation des variantes d'animation
- * - Throttling du scroll event
+ * - Fond noir au lieu de primaire
+ * - Logo version dark (blanc) au lieu de light
+ * - Navigation en blanc au lieu de noir
  */
 const Header = () => {
     const [isScrolled, setIsScrolled] = useState(false);
@@ -35,13 +34,13 @@ const Header = () => {
     // Animations optimisées: transitions plus légères
     const headerVariants = {
         initial: {
-            backgroundColor: 'rgba(205, 254, 0, 1)',
+            backgroundColor: 'rgba(0, 0, 0, 1)',
             height: '100px',
         },
         scrolled: {
-            backgroundColor: 'rgba(205, 254, 0, 0.95)',
+            backgroundColor: 'rgba(0, 0, 0, 0.95)',
             height: '80px',
-            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.05)'
+            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.2)'
         }
     };
 
@@ -70,7 +69,7 @@ const Header = () => {
             }
         }),
         hover: {
-            color: '#000000',
+            color: '#CDFE00', // Changé pour primary au hover
             fontWeight: '600',
             transition: { duration: 0.2 }
         }
@@ -113,7 +112,7 @@ const Header = () => {
             initial="initial"
             animate={isScrolled ? 'scrolled' : 'initial'}
             transition={{ duration: 0.3 }}
-            className="fixed top-0 left-0 right-0 z-50 px-6 md:px-12"
+            className="fixed top-0 left-0 right-0 z-50 px-6 md:px-12 bg-black"
         >
             <div className="flex items-center justify-between h-full max-w-7xl mx-auto">
                 {/* Logo à gauche */}
@@ -126,7 +125,7 @@ const Header = () => {
                         className="relative w-10 md:w-12 aspect-square cursor-pointer"
                     >
                         <Image
-                            src="/images/logo-osmo-light.svg"
+                            src="/images/logo-osmo-dark.svg"
                             alt="Osmo Logo"
                             width={48}
                             height={48}
@@ -148,7 +147,7 @@ const Header = () => {
                                 animate="animate"
                                 whileHover="hover"
                             >
-                                <Link href={link.href} className="text-black font-medium text-lg tracking-wide">
+                                <Link href={link.href} className="text-white font-medium text-lg tracking-wide">
                                     {link.name}
                                 </Link>
                             </motion.li>
@@ -167,9 +166,9 @@ const Header = () => {
                     className="block md:hidden cursor-pointer z-10 absolute right-6"
                     onClick={() => setIsMenuOpen(!isMenuOpen)}
                 >
-                    <div className={`w-8 h-0.5 bg-black mb-2 transition-transform ${isMenuOpen ? 'transform rotate-45 translate-y-2.5' : ''}`}></div>
-                    <div className={`w-8 h-0.5 bg-black mb-2 transition-opacity ${isMenuOpen ? 'opacity-0' : 'opacity-100'}`}></div>
-                    <div className={`w-8 h-0.5 bg-black transition-transform ${isMenuOpen ? 'transform -rotate-45 -translate-y-2.5' : ''}`}></div>
+                    <div className={`w-8 h-0.5 bg-white mb-2 transition-transform ${isMenuOpen ? 'transform rotate-45 translate-y-2.5' : ''}`}></div>
+                    <div className={`w-8 h-0.5 bg-white mb-2 transition-opacity ${isMenuOpen ? 'opacity-0' : 'opacity-100'}`}></div>
+                    <div className={`w-8 h-0.5 bg-white transition-transform ${isMenuOpen ? 'transform -rotate-45 -translate-y-2.5' : ''}`}></div>
                 </motion.div>
             </div>
 
@@ -182,7 +181,7 @@ const Header = () => {
                         initial="closed"
                         animate="open"
                         exit="closed"
-                        className="fixed inset-0 bg-primary z-40 flex flex-col items-center justify-center"
+                        className="fixed inset-0 bg-black z-40 flex flex-col items-center justify-center"
                     >
                         <ul className="flex flex-col space-y-6 items-center">
                             {navLinks.map((link, i) => (
@@ -197,7 +196,7 @@ const Header = () => {
                                 >
                                     <Link
                                         href={link.href}
-                                        className="text-black font-medium text-2xl"
+                                        className="text-white font-medium text-2xl hover:text-primary"
                                         onClick={closeMenu}
                                     >
                                         {link.name}
