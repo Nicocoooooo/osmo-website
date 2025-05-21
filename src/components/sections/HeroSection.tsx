@@ -2,14 +2,14 @@ import { useRef, useEffect, useState } from 'react';
 import { motion, useInView } from 'framer-motion';
 import gsap from 'gsap';
 import Button from '../ui/Button';
-import TerminalAnimation from '../animations/TerminalAnimation';
+import ChatbotAnimation from '../animations/ChatbotAnimation';
 
 /**
  * HeroSection redesignée avec:
  * - Fond noir
  * - "personnalisé" en jaune/vert
  * - Texte à gauche
- * - Terminal à droite, aligné verticalement avec le texte
+ * - Chatbot à droite, aligné verticalement avec le texte
  * - Demi-cercle lumineux en bas
  */
 
@@ -149,7 +149,7 @@ const HeroSection = () => {
                         </div>
                     </div>
 
-                    {/* Terminal interactif - repositionné pour s'aligner avec le texte principal */}
+                    {/* Chatbot interactif - repositionné pour s'aligner avec le texte principal */}
                     <div className="lg:col-span-2 h-full relative hidden lg:flex items-start justify-center" style={{ marginTop: "-7rem" }}>
                         <motion.div
                             initial={{ opacity: 0 }}
@@ -161,17 +161,10 @@ const HeroSection = () => {
                             <div className="absolute -inset-4 bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 rounded-xl opacity-50"></div>
 
                             <div className="relative transform scale-110">
-                                <TerminalAnimation
-                                    texts={[
-                                        "initializing osmo RAG system...",
-                                        "connecting to knowledge base...",
-                                        "processing learning patterns...",
-                                        "personalizing content...",
-                                        "osmo AI ready for collaboration"
-                                    ]}
-                                    typingSpeed={50}
-                                    delayBetweenLines={1000}
-                                    cursorColor="#CDFE00"
+                                <ChatbotAnimation
+                                    initialDelay={300}
+                                    typingSpeed={40}
+                                    delayBetweenMessages={1000}
                                 />
                                 <div className="terminal-glow"></div>
                             </div>
