@@ -1,38 +1,51 @@
 // src/app/page.tsx
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Layout from "../components/layout/Layout";
 import HeroSection from "../components/sections/HeroSection";
 import ClientsSection from "../components/sections/ClientsSection";
 import StepsSection from "../components/sections/StepsSection";
 import ContactSection from "../components/sections/ContactSection";
 import useLocoScroll from "../hooks/useLocoScroll";
-import LoadingScreen from "../components/LoadingScreen";
-import ModernLoadingScreen from "../components/ModernLoadingScreen";
-import EnhancedLoadingScreen from "../components/EnhancedLoadingScreen";
+import LiquidLoadingScreen from "../components/LiquidLoadingScreen";
+import CircularTransition from "../components/CircularTransition";
 
 export default function Home() {
-  const [isLoading, setIsLoading] = useState(true);
+  const [loadingPhase, setLoadingPhase] = useState<'loading' | 'transitioning' | 'complete'>('loading');
+  const [showContent, setShowContent] = useState(false);
 
-  // Simuler un chargement d'application
-  useEffect(() => {
-    // Vous pouvez remplacer ceci par votre propre logique de chargement
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 3000); // Montrer l'écran de chargement pendant 3 secondes
+  // Gérer les phases de chargement
+  const handleLoadingComplete = () => {
+    setLoadingPhase('transitioning');
+  };
 
-    return () => clearTimeout(timer);
-  }, []);
+  const handleTransitionComplete = () => {
+    setLoadingPhase('complete');
+    setShowContent(true);
+  };
+
+  // Activer le smooth scroll seulement quand le contenu est affiché
+  useLocoScroll(showContent);
 
   return (
     <>
-      <EnhancedLoadingScreen
-        isLoading={isLoading}
-        onComplete={() => console.log("Chargement terminé")}
+      {/* Écran de chargement avec animation liquide */}
+      <LiquidLoadingScreen
+        isLoading={loadingPhase === 'loading'}
+        onComplete={handleLoadingComplete}
+        minDisplayTime={3000}
       />
 
-      {!isLoading && (
+      {/* Transition circulaire */}
+      <CircularTransition
+        isActive={loadingPhase === 'transitioning'}
+        onComplete={handleTransitionComplete}
+        duration={1500}
+      />
+
+      {/* Contenu principal */}
+      {showContent && (
         <Layout>
           <HeroSection />
           <ClientsSection />
