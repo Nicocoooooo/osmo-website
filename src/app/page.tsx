@@ -8,8 +8,6 @@ import ClientsSection from "../components/sections/ClientsSection";
 import StepsSection from "../components/sections/StepsSection";
 import ContactSection from "../components/sections/ContactSection";
 import useLocoScroll from "../hooks/useLocoScroll";
-import LoadingScreen from "../components/LoadingScreen";
-import ModernLoadingScreen from "../components/ModernLoadingScreen";
 import EnhancedLoadingScreen from "../components/EnhancedLoadingScreen";
 
 export default function Home() {
